@@ -1,0 +1,44 @@
+name: Gerar CorpoDinamico.exe
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  compilar-exe:
+    name: Compilar no Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Baixar o codigo enviado
+        uses: actions/checkout@v4
+
+      - name: Preparar o Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstituir o projeto (app/ e assets/) a partir do pacote.py
+        run: python pacote.py
+
+      - name: Instalar as dependencias do projeto
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Gerar o CorpoDinamico.exe
+        run: >
+          pyinstaller --onefile --windowed --name CorpoDinamico
+          --icon "assets/logo/logo-icone.ico"
+          --add-data "app/templates;app/templates"
+          --add-data "app/static;app/static"
+          --add-data "app/migrations;app/migrations"
+          --add-data "assets/logo;assets/logo"
+          main.py
+
+      - name: Disponibilizar o .exe para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: CorpoDinamico
+          path: dist/CorpoDinamico.exe
+          if-no-files-found: error
